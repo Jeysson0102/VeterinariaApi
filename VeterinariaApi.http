@@ -1,0 +1,6 @@
+@VeterinariaApi_HostAddress = http://localhost:5225
+
+GET {{VeterinariaApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
