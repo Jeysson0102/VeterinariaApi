@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using VeterinariaApi.Middlewares; // Importamos el middleware
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. AGREGAR ESTA LÍNEA: Le dice a .NET que use nuestros Controladores
 builder.Services.AddControllers();
-
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -12,9 +15,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// app.UseHttpsRedirection(); // Comentado para evitar el warning amarillo en consola
+// Activa el manejo global de errores ANTES de los controladores
+app.UseMiddleware<ExceptionMiddleware>();
 
-// 2. AGREGAR ESTA LÍNEA: Mapea las rutas de nuestros controladores (ej. /api/citas)
 app.MapControllers();
 
 app.Run();

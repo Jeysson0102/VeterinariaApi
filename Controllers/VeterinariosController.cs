@@ -9,26 +9,24 @@ namespace VeterinariaApi.Controllers
     [Route("api/[controller]")]
     public class VeterinariosController : ControllerBase
     {
-        // GET: api/veterinarios (Listar todos)
         [HttpGet]
-        public IActionResult GetAll() => Ok(DataStore.Veterinarios);
+        public IActionResult GetAll() 
+            => Ok(new ApiResponse<object>(true, "Veterinarios recuperados", DataStore.Veterinarios));
 
-        // GET: api/veterinarios/1 (Obtener por ID)
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
             var veterinario = DataStore.Veterinarios.FirstOrDefault(v => v.Id == id);
             if (veterinario == null) 
-                return NotFound(new { mensaje = $"No se encontró el veterinario con ID {id}." });
+                return NotFound(new ApiResponse<object>(false, $"No se encontró el veterinario con ID {id}."));
             
-            return Ok(veterinario);
+            return Ok(new ApiResponse<object>(true, "Veterinario encontrado", veterinario));
         }
 
-        // POST: api/veterinarios (Crear nuevo)
         [HttpPost]
         public IActionResult Create([FromBody] VeterinarioDTO dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(new ApiResponse<object>(false, "Datos inválidos", ModelState));
 
             var nuevoVeterinario = new Veterinario
             {
@@ -38,35 +36,33 @@ namespace VeterinariaApi.Controllers
             };
 
             DataStore.Veterinarios.Add(nuevoVeterinario);
-            return CreatedAtAction(nameof(GetById), new { id = nuevoVeterinario.Id }, nuevoVeterinario);
+            return CreatedAtAction(nameof(GetById), new { id = nuevoVeterinario.Id }, new ApiResponse<object>(true, "Veterinario creado", nuevoVeterinario));
         }
 
-        // PUT: api/veterinarios/1 (Actualizar)
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] VeterinarioDTO dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(new ApiResponse<object>(false, "Datos inválidos", ModelState));
 
             var veterinario = DataStore.Veterinarios.FirstOrDefault(v => v.Id == id);
             if (veterinario == null) 
-                return NotFound(new { mensaje = "Veterinario no encontrado para actualizar." });
+                return NotFound(new ApiResponse<object>(false, "Veterinario no encontrado."));
             
             veterinario.Nombre = dto.Nombre;
             veterinario.Especialidad = dto.Especialidad;
 
-            return NoContent(); // Estándar profesional para actualizaciones exitosas
+            return Ok(new ApiResponse<object>(true, "Veterinario actualizado", veterinario));
         }
 
-        // DELETE: api/veterinarios/1 (Eliminar)
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             var veterinario = DataStore.Veterinarios.FirstOrDefault(v => v.Id == id);
             if (veterinario == null) 
-                return NotFound(new { mensaje = "Veterinario no encontrado para eliminar." });
+                return NotFound(new ApiResponse<object>(false, "Veterinario no encontrado."));
             
             DataStore.Veterinarios.Remove(veterinario);
-            return NoContent(); // Estándar profesional para eliminaciones exitosas
+            return Ok(new ApiResponse<object>(true, "Veterinario eliminado"));
         }
     }
 }

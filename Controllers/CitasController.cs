@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Linq;
 using VeterinariaApi.Models;
 using VeterinariaApi.DTOs;
@@ -10,40 +9,44 @@ namespace VeterinariaApi.Controllers
     [Route("api/[controller]")]
     public class CitasController : ControllerBase
     {
-        // GET: api/citas (Listar todas)
         [HttpGet]
         public IActionResult GetCitas()
         {
-            return Ok(DataStore.Citas);
+            return Ok(new ApiResponse<object>(true, "Visualizando Citas", DataStore.Citas));
         }
 
-        // GET: api/citas/1 (Obtener por ID)
         [HttpGet("{id}")]
         public IActionResult GetCita(int id)
         {
             var cita = DataStore.Citas.FirstOrDefault(c => c.Id == id);
             if (cita == null) 
-                return NotFound(new { mensaje = $"No se encontró la cita con el ID {id}." });
+                return NotFound(new ApiResponse<object>(false, $"No se encontró la cita con ID {id}."));
             
-            return Ok(cita);
+            return Ok(new ApiResponse<object>(true, "Cita encontrada", cita));
         }
 
-        // POST: api/citas (Registrar usando IDs de Mascota y Veterinario)
+        // RUTA JERÁRQUICA: /api/citas/mascota/{mascotaId}
+        [HttpGet("mascota/{mascotaId}")]
+        public IActionResult GetCitasPorMascota(int mascotaId)
+        {
+            var citasMascota = DataStore.Citas.Where(c => c.Mascota.Id == mascotaId).ToList();
+            if (!citasMascota.Any())
+                return NotFound(new ApiResponse<object>(false, $"No hay citas para la mascota {mascotaId}."));
+
+            return Ok(new ApiResponse<object>(true, "Citas encontradas", citasMascota));
+        }
+
         [HttpPost]
         public IActionResult CrearCita([FromBody] CitaDTO citaDto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(new ApiResponse<object>(false, "Datos inválidos", ModelState));
 
-            // Buscamos si la mascota y el veterinario existen en nuestros registros centrales
             var mascota = DataStore.Mascotas.FirstOrDefault(m => m.Id == citaDto.MascotaId);
             var veterinario = DataStore.Veterinarios.FirstOrDefault(v => v.Id == citaDto.VeterinarioId);
 
-            if (mascota == null) 
-                return NotFound(new { mensaje = $"La mascota con ID {citaDto.MascotaId} no existe." });
-            if (veterinario == null) 
-                return NotFound(new { mensaje = $"El veterinario con ID {citaDto.VeterinarioId} no existe." });
+            if (mascota == null || veterinario == null) 
+                return NotFound(new ApiResponse<object>(false, "Mascota o Veterinario no existen."));
 
-            // Armamos el objeto real con la información completa
             var nuevaCita = new CitaMascota
             {
                 Id = DataStore.Citas.Count > 0 ? DataStore.Citas.Max(c => c.Id) + 1 : 1,
@@ -54,45 +57,41 @@ namespace VeterinariaApi.Controllers
             };
             
             DataStore.Citas.Add(nuevaCita);
-            return CreatedAtAction(nameof(GetCita), new { id = nuevaCita.Id }, nuevaCita);
+            return CreatedAtAction(nameof(GetCita), new { id = nuevaCita.Id }, new ApiResponse<object>(true, "Cita creada", nuevaCita));
         }
 
-        // PUT: api/citas/1 (Actualizar cita existente)
         [HttpPut("{id}")]
         public IActionResult ActualizarCita(int id, [FromBody] CitaDTO citaDto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(new ApiResponse<object>(false, "Datos inválidos", ModelState));
 
             var citaExistente = DataStore.Citas.FirstOrDefault(c => c.Id == id);
             if (citaExistente == null) 
-                return NotFound(new { mensaje = "Cita no encontrada para actualizar." });
+                return NotFound(new ApiResponse<object>(false, "Cita no encontrada."));
 
-            // Validamos que los nuevos IDs de relación existan
             var mascota = DataStore.Mascotas.FirstOrDefault(m => m.Id == citaDto.MascotaId);
             var veterinario = DataStore.Veterinarios.FirstOrDefault(v => v.Id == citaDto.VeterinarioId);
 
             if (mascota == null || veterinario == null)
-                return BadRequest(new { mensaje = "Mascota o Veterinario no encontrados." });
+                return BadRequest(new ApiResponse<object>(false, "Mascota o Veterinario no existen."));
 
-            // Actualizamos los campos
             citaExistente.Fecha = citaDto.Fecha;
             citaExistente.Motivo = citaDto.Motivo;
             citaExistente.Mascota = mascota;
             citaExistente.Veterinario = veterinario;
 
-            return Ok(new { mensaje = "Cita actualizada correctamente.", cita = citaExistente });
+            return Ok(new ApiResponse<object>(true, "Cita actualizada", citaExistente));
         }
 
-        // DELETE: api/citas/1 (Eliminar cita)
         [HttpDelete("{id}")]
         public IActionResult EliminarCita(int id)
         {
             var cita = DataStore.Citas.FirstOrDefault(c => c.Id == id);
             if (cita == null) 
-                return NotFound(new { mensaje = "Cita no encontrada para eliminar." });
+                return NotFound(new ApiResponse<object>(false, "Cita no encontrada."));
 
             DataStore.Citas.Remove(cita);
-            return Ok(new { mensaje = "Cita eliminada correctamente." });
+            return Ok(new ApiResponse<object>(true, "Cita eliminada"));
         }
     }
 }

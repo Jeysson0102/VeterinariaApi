@@ -2,13 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VeterinariaApi.Models
 {
-    public class Veterinario
+    public class Veterinario : BaseEntity
     {
-        [Required(ErrorMessage = "El ID del veterinario es obligatorio.")]
-        public int Id { get; set; }
-
-        [Required(ErrorMessage = "El nombre del veterinario es obligatorio.")]
-        [StringLength(100)]
+        [Required(ErrorMessage = "El nombre es obligatorio.")]
         public required string Nombre { get; set; }
 
         [Required(ErrorMessage = "La especialidad es obligatoria.")]
